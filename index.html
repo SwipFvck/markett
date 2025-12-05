@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Pakasir Marketplace</title>
+  <title>Marketplace Swiper Fvck</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
@@ -823,11 +823,11 @@
 <div class="app">
   <header>
     <div class="brand">
-      <div class="brand-logo">P</div>
+      <div class="brand-logo">S</div>
       <div class="brand-text">
         <div class="brand-title">
-          <span>Pakasir</span>
-          <span style="font-weight: 500; font-size: 11px; color: var(--muted);">Marketplace</span>
+          <span>Swiper Fvck Marketplace</span>
+          <span style="font-weight: 500; font-size: 11px; color: var(--muted);"></span>
         </div>
         <div class="brand-subtitle">
           Store modern dengan pembayaran <strong>QRIS otomatis</strong>.
@@ -971,47 +971,180 @@
   /***************************************************
    *  KONFIGURASI BACKEND
    ***************************************************/
-  const BACKEND_BASE_URL = "https://payment-phi-flax.vercel.app"; // ganti kalau URL Vercel kamu beda
+  const BACKEND_BASE_URL = "https://payment-phi-flax.vercel.app"; // URL backend Vercel kamu
 
   /***************************************************
-   *  DATA PRODUK (contoh)
+   *  DATA PRODUK PANEL PTERODACTYL
+   *  (Silakan sesuaikan HARGA & LINK TELEGRAM)
    ***************************************************/
   const products = [
+    // PANEL RAM (wajib username)
     {
-      id: "basic-topup",
-      name: "Topup Saldo Basic",
-      description: "Cocok untuk user baru. Saldo untuk layanan digital / bot.",
+      id: "panel-1gb",
+      name: "Panel Pterodactyl 1GB",
+      description: "Cocok untuk bot kecil / testing. 1GB RAM.",
       price: 1000,
-      emoji: "⚡",
+      emoji: "🧪",
+      tag: "Entry",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-2gb",
+      name: "Panel Pterodactyl 2GB",
+      description: "Untuk 1–2 bot, RAM 2GB.",
+      price: 2000,
+      emoji: "⚙️",
+      tag: "Basic",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-3gb",
+      name: "Panel Pterodactyl 3GB",
+      description: "Lebih lega untuk beberapa service.",
+      price: 3000,
+      emoji: "🔧",
+      tag: "Basic+",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-4gb",
+      name: "Panel Pterodactyl 4GB",
+      description: "Cocok untuk beberapa bot aktif.",
+      price: 4000,
+      emoji: "💻",
       tag: "Popular",
-      badge: "Digital Credit"
+      badge: "Panel",
+      requireUsername: true
     },
     {
-      id: "premium-topup",
-      name: "Topup Saldo Premium",
-      description: "Topup lebih besar untuk power user & reseller.",
-      price: 50000,
+      id: "panel-5gb",
+      name: "Panel Pterodactyl 5GB",
+      description: "Resource lebih besar untuk project growing.",
+      price: 5000,
       emoji: "🚀",
-      tag: "Best Deal",
-      badge: "Digital Credit"
+      tag: "Popular",
+      badge: "Panel",
+      requireUsername: true
     },
     {
-      id: "subscription-1m",
-      name: "Paket Langganan 1 Bulan",
-      description: "Akses premium 30 hari untuk layanan yang kamu sediakan.",
-      price: 100000,
-      emoji: "💎",
-      tag: "Subscription",
-      badge: "Service"
+      id: "panel-6gb",
+      name: "Panel Pterodactyl 6GB",
+      description: "Untuk beberapa bot besar / multi project.",
+      price: 6000,
+      emoji: "🛰️",
+      tag: "Pro",
+      badge: "Panel",
+      requireUsername: true
     },
     {
-      id: "custom-payment",
-      name: "Pembayaran Custom",
-      description: "Gunakan untuk invoice manual / custom order.",
+      id: "panel-7gb",
+      name: "Panel Pterodactyl 7GB",
+      description: "Panel high resource, cocok untuk power user.",
+      price: 7000,
+      emoji: "⚡",
+      tag: "Pro",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-8gb",
+      name: "Panel Pterodactyl 8GB",
+      description: "Untuk kebutuhan berat & stabil.",
+      price: 8000,
+      emoji: "🔥",
+      tag: "Pro+",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-9gb",
+      name: "Panel Pterodactyl 9GB",
+      description: "Panel besar untuk beberapa service berat.",
+      price: 9000,
+      emoji: "💥",
+      tag: "Pro+",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-10gb",
+      name: "Panel Pterodactyl 10GB",
+      description: "Panel besar untuk banyak bot / project.",
+      price: 10000,
+      emoji: "🌌",
+      tag: "Extreme",
+      badge: "Panel",
+      requireUsername: true
+    },
+    {
+      id: "panel-unli",
+      name: "Panel Pterodactyl Unlimited",
+      description: "Paket spesial unlimited (sesuai ketentuan toko).",
+      price: 15000,
+      emoji: "♾️",
+      tag: "Special",
+      badge: "Panel",
+      requireUsername: true
+    },
+
+    // ROLE / RESELLER (tidak perlu username, kirim link TG)
+    {
+      id: "reseller-panel",
+      name: "Reseller Panel",
+      description: "Akses reseller panel + harga khusus.",
       price: 25000,
-      emoji: "🧾",
-      tag: "Flexible",
-      badge: "Manual Invoice"
+      emoji: "🤝",
+      tag: "Access",
+      badge: "Role Panel",
+      requireUsername: false,
+      telegramGroupLink: "https://t.me/your_reseller_group" // TODO: ganti link
+    },
+    {
+      id: "admin-panel",
+      name: "Admin Panel",
+      description: "Akses level admin panel + support dekat.",
+      price: 50000,
+      emoji: "🛡️",
+      tag: "Access",
+      badge: "Role Panel",
+      requireUsername: false,
+      telegramGroupLink: "https://t.me/your_admin_group" // TODO: ganti link
+    },
+    {
+      id: "partner-panel",
+      name: "Partner Panel",
+      description: "Kerja sama jangka panjang dengan benefit khusus.",
+      price: 75000,
+      emoji: "🤝",
+      tag: "Partner",
+      badge: "Role Panel",
+      requireUsername: false,
+      telegramGroupLink: "https://t.me/your_partner_group" // TODO: ganti link
+    },
+    {
+      id: "owner-panel",
+      name: "Owner Panel",
+      description: "Akses owner + control penuh ekosistem panel.",
+      price: 100000,
+      emoji: "👑",
+      tag: "Owner",
+      badge: "Role Panel",
+      requireUsername: false,
+      telegramGroupLink: "https://t.me/your_owner_group" // TODO: ganti link
+    },
+    {
+      id: "tangan-kanan-panel",
+      name: "Tangan Kanan Panel",
+      description: "Level kepercayaan tertinggi di panel.",
+      price: 125000,
+      emoji: "🫱🏻‍🫲🏽",
+      tag: "Trusted",
+      badge: "Role Panel",
+      requireUsername: false,
+      telegramGroupLink: "https://t.me/your_right_hand_group" // TODO: ganti link
     }
   ];
 
@@ -1021,7 +1154,7 @@
   let selectedProduct = null;
   let currentOrder = null;
   let pollTimer = null;
-  const MAX_POLL_ATTEMPTS = 24; // 24 x 3 detik ≈ 72 detik
+  const MAX_POLL_ATTEMPTS = 24;
   const POLL_INTERVAL_MS = 3000;
 
   /***************************************************
@@ -1141,6 +1274,18 @@
       return;
     }
 
+    // input username only kalau requireUsername
+    const usernameField = selectedProduct.requireUsername
+      ? `
+        <div class="checkout-row" style="margin-top:6px;">
+          <div class="qty-input" style="flex:1;">
+            <span>Username Panel</span>
+            <input type="text" id="panelUsernameInput" placeholder="username_panel" />
+          </div>
+        </div>
+      `
+      : "";
+
     checkout.innerHTML = `
       <div class="checkout-item">
         <div class="checkout-row">
@@ -1162,6 +1307,7 @@
             <strong id="totalAmountLabel" class="price-major">${formatRupiah(selectedProduct.price)}</strong>
           </div>
         </div>
+        ${usernameField}
       </div>
     `;
 
@@ -1217,6 +1363,84 @@
   }
 
   /***************************************************
+   *  AKSI SETELAH PEMBAYARAN BERHASIL
+   *  - Panel RAM  : panggil backend buat akun panel
+   *  - Role Panel : kirim link grup Telegram
+   ***************************************************/
+  async function handleAfterPaymentSuccess(orderId, amount) {
+    if (!currentOrder || !selectedProduct) return;
+
+    // Jika produk butuh username panel → call backend
+    if (selectedProduct.requireUsername) {
+      const payload = {
+        order_id: orderId,
+        amount,
+        username: currentOrder.panelUsername,
+        product_id: selectedProduct.id
+      };
+
+      try {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/create-panel-account`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          alert(
+            "✅ Pembayaran berhasil, tetapi terjadi kesalahan saat membuat akun panel.\n" +
+              "Silakan hubungi admin dengan membawa Order ID.\n\n" +
+              txt
+          );
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        const panel = data.panel || data || {};
+
+        const loginUser = panel.username || currentOrder.panelUsername;
+        const loginPass = panel.password || "(cek DM / catatan dari admin)";
+        const loginUrl = panel.login_url || "URL panel default kamu";
+
+        alert(
+          "✅ Akun panel berhasil dibuat.\n\n" +
+            "Order ID : " +
+            orderId +
+            "\n" +
+            "Username : " +
+            loginUser +
+            "\n" +
+            "Password : " +
+            loginPass +
+            "\n" +
+            "Panel    : " +
+            loginUrl
+        );
+      } catch (err) {
+        console.error("Error create panel account:", err);
+        alert(
+          "✅ Pembayaran berhasil, tetapi terjadi error saat membuat akun panel.\n" +
+            "Silakan hubungi admin dengan membawa Order ID."
+        );
+      }
+    } else if (selectedProduct.telegramGroupLink) {
+      // Paket role / reseller → kirim link grup
+      const url = selectedProduct.telegramGroupLink;
+      alert(
+        "✅ Pembayaran berhasil!\n\n" +
+          "Silakan masuk ke grup Telegram sesuai paket kamu:\n" +
+          url
+      );
+      try {
+        window.open(url, "_blank");
+      } catch (_) {
+        // abaikan kalau popup diblok
+      }
+    }
+  }
+
+  /***************************************************
    *  POLLING STATUS TRANSAKSI VIA BACKEND
    ***************************************************/
   function startPollingStatus(orderId, amount) {
@@ -1260,12 +1484,9 @@
           pollTimer = null;
           setStatusLine("PEMBAYARAN BERHASIL", "success");
           setModalStatus("success", "PEMBAYARAN BERHASIL");
-          alert(
-            "✅ Pembayaran berhasil!\n\nOrder ID: " +
-              orderId +
-              "\nNominal: " +
-              formatRupiah(amount)
-          );
+
+          await handleAfterPaymentSuccess(orderId, amount);
+
           return;
         }
 
@@ -1317,6 +1538,24 @@
       return;
     }
 
+    // Validasi username untuk produk panel
+    let panelUsername = "";
+    if (selectedProduct.requireUsername) {
+      const usernameInput = document.getElementById("panelUsernameInput");
+      panelUsername = (usernameInput?.value || "").trim();
+
+      if (!panelUsername) {
+        showError("Masukkan username untuk akun panel.");
+        return;
+      }
+      if (!/^[a-zA-Z0-9_]{3,32}$/.test(panelUsername)) {
+        showError(
+          "Username panel hanya boleh huruf/angka/underscore, 3–32 karakter."
+        );
+        return;
+      }
+    }
+
     const payButton = document.getElementById("payButton");
     payButton.disabled = true;
     payButton.innerHTML = `<span>Membuat QRIS...</span>`;
@@ -1328,27 +1567,35 @@
       orderId,
       amount,
       productName: selectedProduct.name,
-      qty
+      qty,
+      panelUsername
     };
 
     try {
       const res = await createQrisTransaction(amount, orderId);
 
       document.getElementById("invoiceOrderId").textContent = orderId;
-      document.getElementById("invoiceProductName").textContent = selectedProduct.name;
+      document.getElementById("invoiceProductName").textContent =
+        selectedProduct.name;
       document.getElementById("invoiceQty").textContent = qty.toString();
-      document.getElementById("invoiceAmountPill").querySelector("strong").textContent =
-        formatRupiah(amount);
+      document
+        .getElementById("invoiceAmountPill")
+        .querySelector("strong").textContent = formatRupiah(amount);
       document.getElementById("qrImage").src = res.qrUrl;
 
       setModalStatus("pending", "MENUNGGU PEMBAYARAN");
       openModal();
-      setStatusLine("QRIS BERHASIL DIBUAT • MENUNGGU PEMBAYARAN", "pending");
+      setStatusLine(
+        "QRIS BERHASIL DIBUAT • MENUNGGU PEMBAYARAN",
+        "pending"
+      );
 
       startPollingStatus(orderId, amount);
     } catch (err) {
       console.error(err);
-      showError("Terjadi kesalahan saat membuat transaksi QRIS.\n\n" + err.message);
+      showError(
+        "Terjadi kesalahan saat membuat transaksi QRIS.\n\n" + err.message
+      );
       setStatusLine("GAGAL MEMBUAT QRIS", "failed");
     } finally {
       payButton.disabled = false;
