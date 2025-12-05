@@ -969,17 +969,13 @@
 
 <script>
   /***************************************************
-   *  KONFIGURASI PAKASIR
-   *
-   *  Wajib diisi dari dashboard app.pakasir.com
+   *  KONFIGURASI BACKEND
    ***************************************************/
-  const BACKEND_BASE_URL = "https://payment-phi-flax.vercel.app"; // ganti dengan URL Vercel kamu
+  const BACKEND_BASE_URL = "https://pakasir-backend-swiper.vercel.app"; // ganti kalau URL Vercel kamu beda
 
   /***************************************************
    *  DATA PRODUK (contoh)
-   *  Bisa kamu ganti/extend sesuai kebutuhan
    ***************************************************/
-   
   const products = [
     {
       id: "basic-topup",
@@ -1025,7 +1021,7 @@
   let selectedProduct = null;
   let currentOrder = null;
   let pollTimer = null;
-  const MAX_POLL_ATTEMPTS = 24;  // 24 x 3 detik ≈ 72 detik
+  const MAX_POLL_ATTEMPTS = 24; // 24 x 3 detik ≈ 72 detik
   const POLL_INTERVAL_MS = 3000;
 
   /***************************************************
@@ -1041,7 +1037,7 @@
 
   function createOrderId() {
     const now = new Date();
-    const tanggal = now.toISOString().split("T")[0]; // YYYY-MM-DD
+    const tanggal = now.toISOString().split("T")[0];
     const uniq = Date.now();
     return `${tanggal}-${uniq}`;
   }
@@ -1127,7 +1123,6 @@
   function handleSelectProduct(productId) {
     selectedProduct = products.find((p) => p.id === productId) || null;
 
-    // highlight
     document.querySelectorAll(".product").forEach((card) => {
       card.classList.toggle("selected", card.dataset.id === productId);
     });
@@ -1170,7 +1165,6 @@
       </div>
     `;
 
-    // set default status
     setStatusLine("PRODUK DIPILIH • SIAP MEMBUAT QRIS", "idle");
     payButton.disabled = false;
 
@@ -1184,131 +1178,126 @@
   }
 
   /***************************************************
-   *  CREATE QRIS TRANSACTION (pakai API Pakasir)
+   *  CREATE QRIS TRANSACTION VIA BACKEND VERCEL
    ***************************************************/
   async function createQrisTransaction(amount, orderId) {
-  const resRaw = await fetch(`${BACKEND_BASE_URL}/api/create-qris`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount, order_id: orderId })
-  });
+    const resRaw = await fetch(`${BACKEND_BASE_URL}/api/create-qris`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, order_id: orderId })
+    });
 
-  if (!resRaw.ok) {
-    const errText = await resRaw.text().catch(() => "");
-    throw new Error("Gagal membuat transaksi QRIS. " + errText);
+    if (!resRaw.ok) {
+      const errText = await resRaw.text().catch(() => "");
+      throw new Error("Gagal membuat transaksi QRIS. " + errText);
+    }
+
+    const data = await resRaw.json();
+    const payment = data.payment || data || {};
+
+    if (!payment || (!payment.payment_number && !data.code)) {
+      throw new Error("Gagal membuat transaksi QRIS (data tidak lengkap).");
+    }
+
+    const code = data.code || payment.code || "";
+    const qrisString = payment.payment_number || data.qris_string || "";
+
+    let qrUrl = "";
+    if (code) {
+      qrUrl = `https://app.pakasir.com/qris/${code}.png`;
+    } else if (qrisString) {
+      qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(
+        qrisString
+      )}&size=500&format=png`;
+    } else {
+      throw new Error("QRIS tidak tersedia dari response.");
+    }
+
+    return { qrUrl, code };
   }
-
-  const data = await resRaw.json();
-  const payment = data.payment || data || {};
-
-  if (!payment || (!payment.payment_number && !data.code)) {
-    throw new Error("Gagal membuat transaksi QRIS (data tidak lengkap).");
-  }
-
-  const payment_number = payment.payment_number || data.payment_number || "";
-  const code = data.code || payment.code || "";
-  const qrisString = payment.payment_number || data.qris_string || "";
-
-  let qrUrl = "";
-  if (code) {
-    qrUrl = `https://app.pakasir.com/qris/${code}.png`;
-  } else if (qrisString) {
-    qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(
-      qrisString
-    )}&size=500&format=png`;
-  } else {
-    throw new Error("QRIS tidak tersedia dari response.");
-  }
-
-  return {
-    qrUrl,
-    code,
-    payment_number
-  };
-}
 
   /***************************************************
-   *  POLLING STATUS TRANSAKSI
+   *  POLLING STATUS TRANSAKSI VIA BACKEND
    ***************************************************/
   function startPollingStatus(orderId, amount) {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-
-  let attempts = 0;
-
-  setStatusLine("MENUNGGU PEMBAYARAN...", "pending");
-  setModalStatus("pending", "MENUNGGU PEMBAYARAN");
-
-  pollTimer = setInterval(async () => {
-    attempts++;
-    try {
-      const detailUrl =
-        `${BACKEND_BASE_URL}/api/transaction-detail` +
-        `?amount=${encodeURIComponent(amount)}` +
-        `&order_id=${encodeURIComponent(orderId)}`;
-
-      const resRaw = await fetch(detailUrl);
-
-      if (!resRaw.ok) {
-        console.error("Gagal ambil status:", await resRaw.text());
-        return;
-      }
-
-      const det = await resRaw.json();
-      const tx = det.transaction || det || {};
-      const status = (tx.status || "").toString().toUpperCase();
-
-      if (!status) return;
-
-      if (
-        status.includes("SUCCESS") ||
-        status.includes("COMPLETED") ||
-        status.includes("BERHASIL")
-      ) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-        setStatusLine("PEMBAYARAN BERHASIL", "success");
-        setModalStatus("success", "PEMBAYARAN BERHASIL");
-        alert(
-          "✅ Pembayaran berhasil!\n\nOrder ID: " +
-            orderId +
-            "\nNominal: " +
-            formatRupiah(amount)
-        );
-        return;
-      }
-
-      if (
-        status.includes("FAILED") ||
-        status.includes("EXPIRED") ||
-        status.includes("GAGAL")
-      ) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-        setStatusLine("PEMBAYARAN GAGAL / EXPIRED", "failed");
-        setModalStatus("failed", "PEMBAYARAN GAGAL / EXPIRED");
-        alert("❌ Pembayaran gagal / expired.\n\nOrder ID: " + orderId);
-        return;
-      }
-    } catch (err) {
-      console.error("Error saat cek status:", err);
-    }
-
-    if (attempts >= MAX_POLL_ATTEMPTS) {
+    if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = null;
-      setStatusLine("STATUS TIDAK BERUBAH SETELAH ±1 MENIT", "failed");
-      setModalStatus("failed", "TIMEOUT / TIDAK DIKETAHUI");
-      alert(
-        "⚠️ Status belum berubah setelah sekitar 1 menit.\n" +
-          "Silakan cek manual di dashboard Pakasir.\n\nOrder ID: " +
-          orderId
-      );
     }
-  }, POLL_INTERVAL_MS);
-}
+
+    let attempts = 0;
+
+    setStatusLine("MENUNGGU PEMBAYARAN...", "pending");
+    setModalStatus("pending", "MENUNGGU PEMBAYARAN");
+
+    pollTimer = setInterval(async () => {
+      attempts++;
+      try {
+        const detailUrl =
+          `${BACKEND_BASE_URL}/api/transaction-detail` +
+          `?amount=${encodeURIComponent(amount)}` +
+          `&order_id=${encodeURIComponent(orderId)}`;
+
+        const resRaw = await fetch(detailUrl);
+
+        if (!resRaw.ok) {
+          console.error("Gagal ambil status:", await resRaw.text());
+          return;
+        }
+
+        const det = await resRaw.json();
+        const tx = det.transaction || det || {};
+        const status = (tx.status || "").toString().toUpperCase();
+
+        if (!status) return;
+
+        if (
+          status.includes("SUCCESS") ||
+          status.includes("COMPLETED") ||
+          status.includes("BERHASIL")
+        ) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatusLine("PEMBAYARAN BERHASIL", "success");
+          setModalStatus("success", "PEMBAYARAN BERHASIL");
+          alert(
+            "✅ Pembayaran berhasil!\n\nOrder ID: " +
+              orderId +
+              "\nNominal: " +
+              formatRupiah(amount)
+          );
+          return;
+        }
+
+        if (
+          status.includes("FAILED") ||
+          status.includes("EXPIRED") ||
+          status.includes("GAGAL")
+        ) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          setStatusLine("PEMBAYARAN GAGAL / EXPIRED", "failed");
+          setModalStatus("failed", "PEMBAYARAN GAGAL / EXPIRED");
+          alert("❌ Pembayaran gagal / expired.\n\nOrder ID: " + orderId);
+          return;
+        }
+      } catch (err) {
+        console.error("Error saat cek status:", err);
+      }
+
+      if (attempts >= MAX_POLL_ATTEMPTS) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setStatusLine("STATUS TIDAK BERUBAH SETELAH ±1 MENIT", "failed");
+        setModalStatus("failed", "TIMEOUT / TIDAK DIKETAHUI");
+        alert(
+          "⚠️ Status belum berubah setelah cukup lama.\n" +
+            "Silakan cek manual di dashboard Pakasir.\n\nOrder ID: " +
+            orderId
+        );
+      }
+    }, POLL_INTERVAL_MS);
+  }
 
   /***************************************************
    *  HANDLE BAYAR
@@ -1325,11 +1314,6 @@
 
     if (!Number.isFinite(amount) || amount < 1000) {
       showError("Nominal tidak valid. Minimal Rp 1.000.");
-      return;
-    }
-
-    if (!PAKASIR_PROJECT || !PAKASIR_API_KEY || PAKASIR_PROJECT === "SLUG_MU" || PAKASIR_API_KEY === "API_KEY_MU") {
-      showError("Konfigurasi Pakasir belum diisi. Ganti PAKASIR_PROJECT dan PAKASIR_API_KEY di script.");
       return;
     }
 
@@ -1350,7 +1334,6 @@
     try {
       const res = await createQrisTransaction(amount, orderId);
 
-      // Update modal invoice info
       document.getElementById("invoiceOrderId").textContent = orderId;
       document.getElementById("invoiceProductName").textContent = selectedProduct.name;
       document.getElementById("invoiceQty").textContent = qty.toString();
@@ -1362,7 +1345,6 @@
       openModal();
       setStatusLine("QRIS BERHASIL DIBUAT • MENUNGGU PEMBAYARAN", "pending");
 
-      // mulai polling status
       startPollingStatus(orderId, amount);
     } catch (err) {
       console.error(err);
@@ -1396,7 +1378,6 @@
       }
     });
 
-    // tutup modal ketika klik di luar
     document.getElementById("qrModal").addEventListener("click", (e) => {
       if (e.target.id === "qrModal") {
         closeModal();
