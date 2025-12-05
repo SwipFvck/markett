@@ -973,13 +973,13 @@
    *
    *  Wajib diisi dari dashboard app.pakasir.com
    ***************************************************/
-  const PAKASIR_PROJECT = "swiper-fvck-payment";   // TODO: ganti dengan slug proyek kamu
-  const PAKASIR_API_KEY = "MQDsBgEEj41mxCHFGfl9ekvkxDR2wshN"; // TODO: ganti dengan API key proyek kamu
+  const BACKEND_BASE_URL = "https://payment-phi-flax.vercel.app"; // ganti dengan URL Vercel kamu
 
   /***************************************************
    *  DATA PRODUK (contoh)
    *  Bisa kamu ganti/extend sesuai kebutuhan
    ***************************************************/
+   
   const products = [
     {
       id: "basic-topup",
@@ -1187,110 +1187,128 @@
    *  CREATE QRIS TRANSACTION (pakai API Pakasir)
    ***************************************************/
   async function createQrisTransaction(amount, orderId) {
-    const project = PAKASIR_PROJECT;
-    const api_key = PAKASIR_API_KEY;
+  const resRaw = await fetch(`${BACKEND_BASE_URL}/api/create-qris`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, order_id: orderId })
+  });
 
-    const body = { project, api_key, order_id: orderId, amount };
-
-    const resRaw = await fetch("https://app.pakasir.com/api/transactioncreate/qris", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    const data = await resRaw.json();
-    const payment = data.payment || data || {};
-
-    if (!payment || (!payment.payment_number && !data.code)) {
-      throw new Error("Gagal membuat transaksi QRIS.");
-    }
-
-    const payment_number = payment.payment_number || data.payment_number || "";
-    const code = data.code || payment.code || "";
-    const qrisString = payment.payment_number || data.qris_string || "";
-
-    // di browser cukup pakai URL, tidak perlu buffer
-    let qrUrl = "";
-    if (code) {
-      qrUrl = `https://app.pakasir.com/qris/${code}.png`;
-    } else if (qrisString) {
-      qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrisString)}&size=500&format=png`;
-    } else {
-      throw new Error("QRIS tidak tersedia dari response.");
-    }
-
-    return {
-      qrUrl,
-      code,
-      payment_number
-    };
+  if (!resRaw.ok) {
+    const errText = await resRaw.text().catch(() => "");
+    throw new Error("Gagal membuat transaksi QRIS. " + errText);
   }
+
+  const data = await resRaw.json();
+  const payment = data.payment || data || {};
+
+  if (!payment || (!payment.payment_number && !data.code)) {
+    throw new Error("Gagal membuat transaksi QRIS (data tidak lengkap).");
+  }
+
+  const payment_number = payment.payment_number || data.payment_number || "";
+  const code = data.code || payment.code || "";
+  const qrisString = payment.payment_number || data.qris_string || "";
+
+  let qrUrl = "";
+  if (code) {
+    qrUrl = `https://app.pakasir.com/qris/${code}.png`;
+  } else if (qrisString) {
+    qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(
+      qrisString
+    )}&size=500&format=png`;
+  } else {
+    throw new Error("QRIS tidak tersedia dari response.");
+  }
+
+  return {
+    qrUrl,
+    code,
+    payment_number
+  };
+}
 
   /***************************************************
    *  POLLING STATUS TRANSAKSI
    ***************************************************/
   function startPollingStatus(orderId, amount) {
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 
-    let attempts = 0;
-    const project = PAKASIR_PROJECT;
-    const api_key = PAKASIR_API_KEY;
+  let attempts = 0;
 
-    setStatusLine("MENUNGGU PEMBAYARAN...", "pending");
-    setModalStatus("pending", "MENUNGGU PEMBAYARAN");
+  setStatusLine("MENUNGGU PEMBAYARAN...", "pending");
+  setModalStatus("pending", "MENUNGGU PEMBAYARAN");
 
-    pollTimer = setInterval(async () => {
-      attempts++;
-      try {
-        const detailUrl = `https://app.pakasir.com/api/transactiondetail?project=${encodeURIComponent(
-          project
-        )}&amount=${encodeURIComponent(amount)}&order_id=${encodeURIComponent(
-          orderId
-        )}&api_key=${encodeURIComponent(api_key)}`;
+  pollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const detailUrl =
+        `${BACKEND_BASE_URL}/api/transaction-detail` +
+        `?amount=${encodeURIComponent(amount)}` +
+        `&order_id=${encodeURIComponent(orderId)}`;
 
-        const resRaw = await fetch(detailUrl);
-        const det = await resRaw.json();
-        const tx = det.transaction || det || {};
-        const status = (tx.status || "").toString().toUpperCase();
+      const resRaw = await fetch(detailUrl);
 
-        if (!status) return;
-
-        if (status.includes("SUCCESS") || status.includes("COMPLETED") || status.includes("BERHASIL")) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-          setStatusLine("PEMBAYARAN BERHASIL", "success");
-          setModalStatus("success", "PEMBAYARAN BERHASIL");
-          alert("✅ Pembayaran berhasil!\n\nOrder ID: " + orderId + "\nNominal: " + formatRupiah(amount));
-          return;
-        }
-
-        if (status.includes("FAILED") || status.includes("EXPIRED") || status.includes("GAGAL")) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-          setStatusLine("PEMBAYARAN GAGAL / EXPIRED", "failed");
-          setModalStatus("failed", "PEMBAYARAN GAGAL / EXPIRED");
-          alert("❌ Pembayaran gagal / expired.\n\nOrder ID: " + orderId);
-          return;
-        }
-      } catch (err) {
-        console.error("Error saat cek status:", err);
+      if (!resRaw.ok) {
+        console.error("Gagal ambil status:", await resRaw.text());
+        return;
       }
 
-      if (attempts >= MAX_POLL_ATTEMPTS) {
+      const det = await resRaw.json();
+      const tx = det.transaction || det || {};
+      const status = (tx.status || "").toString().toUpperCase();
+
+      if (!status) return;
+
+      if (
+        status.includes("SUCCESS") ||
+        status.includes("COMPLETED") ||
+        status.includes("BERHASIL")
+      ) {
         clearInterval(pollTimer);
         pollTimer = null;
-        setStatusLine("STATUS TIDAK BERUBAH SETELAH ±1 MENIT", "failed");
-        setModalStatus("failed", "TIMEOUT / TIDAK DIKETAHUI");
+        setStatusLine("PEMBAYARAN BERHASIL", "success");
+        setModalStatus("success", "PEMBAYARAN BERHASIL");
         alert(
-          "⚠️ Status belum berubah setelah sekitar 1 menit.\n" +
-          "Silakan cek manual di dashboard Pakasir.\n\nOrder ID: " + orderId
+          "✅ Pembayaran berhasil!\n\nOrder ID: " +
+            orderId +
+            "\nNominal: " +
+            formatRupiah(amount)
         );
+        return;
       }
-    }, POLL_INTERVAL_MS);
-  }
+
+      if (
+        status.includes("FAILED") ||
+        status.includes("EXPIRED") ||
+        status.includes("GAGAL")
+      ) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setStatusLine("PEMBAYARAN GAGAL / EXPIRED", "failed");
+        setModalStatus("failed", "PEMBAYARAN GAGAL / EXPIRED");
+        alert("❌ Pembayaran gagal / expired.\n\nOrder ID: " + orderId);
+        return;
+      }
+    } catch (err) {
+      console.error("Error saat cek status:", err);
+    }
+
+    if (attempts >= MAX_POLL_ATTEMPTS) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+      setStatusLine("STATUS TIDAK BERUBAH SETELAH ±1 MENIT", "failed");
+      setModalStatus("failed", "TIMEOUT / TIDAK DIKETAHUI");
+      alert(
+        "⚠️ Status belum berubah setelah sekitar 1 menit.\n" +
+          "Silakan cek manual di dashboard Pakasir.\n\nOrder ID: " +
+          orderId
+      );
+    }
+  }, POLL_INTERVAL_MS);
+}
 
   /***************************************************
    *  HANDLE BAYAR
